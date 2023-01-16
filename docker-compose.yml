@@ -1,13 +1,13 @@
 # docker compose file for running a 3-node PostgreSQL cluster
 # with 3-node etcd cluster as the DCS and one haproxy node
-version: "2"
+version: "3.6"
 
 networks:
     demo:
 
 services:
     etcd1: &etcd
-        image: patroni
+        image: andrushin/patroni
         networks: [ demo ]
         environment:
             ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
@@ -32,7 +32,7 @@ services:
         command: etcd -name etcd3 -initial-advertise-peer-urls http://etcd3:2380
 
     haproxy:
-        image: patroni
+        image: andrushin/patroni
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: haproxy
@@ -47,7 +47,7 @@ services:
             PATRONI_SCOPE: demo
 
     patroni1:
-        image: patroni
+        image: andrushin/patroni
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni1
@@ -55,9 +55,16 @@ services:
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni1
+        volumes: &post_init
+          - type: bind
+            source: ./setup_cluster.sh
+            target: /usr/local/bin/setup_cluster.sh
+          - type: bind
+            source: ./postgres0.yml
+            target: /home/postgres/postgres0.yml
 
     patroni2:
-        image: patroni
+        image: andrushin/patroni
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni2
@@ -65,9 +72,10 @@ services:
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni2
+        volumes: *post_init
 
     patroni3:
-        image: patroni
+        image: andrushin/patroni
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni3
@@ -75,3 +83,69 @@ services:
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni3
+        volumes: *post_init
+          
+    destination:
+        image: postgres:15
+        networks: [ demo ]
+        hostname: destination
+        container_name: destination
+        environment:
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+          - POSTGRES_DB=destination_db
+        expose:
+          - 5432
+        volumes:
+          - type: bind
+            source: ./setup_destination.sql
+            target: /docker-entrypoint-initdb.d/setup_destination.sql
+      
+    writer:
+        image: writer
+        build:
+          context: ./app
+          dockerfile: ./PgWriter/Dockerfile
+        networks: [ demo ]
+        environment:
+          CONNECTION_STRING: "Server=haproxy;Port=5000;Database=source_db;User Id=postgres;Password=postgres;"
+        depends_on:
+          - haproxy
+          - patroni1
+          - patroni2
+          - patroni3
+          - etcd1
+          - etcd2
+          - etcd3
+    
+    reader:
+        image: reader
+        build:
+          context: ./app
+          dockerfile: ./PgReader/Dockerfile
+        networks: [ demo ]
+        environment:
+          CONNECTION_STRING: "Server=destination;Port=5432;Database=destination_db;User Id=postgres;Password=postgres;"
+        depends_on:
+          - destination
+         
+    pgadmin:
+        container_name: pgadmin
+        image: dpage/pgadmin4
+        environment:
+          PGADMIN_DEFAULT_EMAIL: 'pgadmin4@pgadmin.org'
+          PGADMIN_DEFAULT_PASSWORD: 'admin'
+          PGADMIN_CONFIG_SERVER_MODE: 'False'
+          PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+        volumes:
+           - type: bind
+             source: ./pgAdmin/servers.json
+             target: /pgadmin4/servers.json
+           - type: bind
+             source: ./pgAdmin/pgpass
+             target: /pgpass
+        ports:
+          - "5050:80"
+        networks: [ demo ]
+        restart: unless-stopped
+

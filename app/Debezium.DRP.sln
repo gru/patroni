@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PgWriter", "PgWriter\PgWriter.csproj", "{3F14CEC6-E547-4483-8B72-172B3BB5B797}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PgReader", "PgReader\PgReader.csproj", "{84F9E9F9-3E68-4121-935D-551FF3BCC611}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F14CEC6-E547-4483-8B72-172B3BB5B797}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F14CEC6-E547-4483-8B72-172B3BB5B797}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F14CEC6-E547-4483-8B72-172B3BB5B797}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F14CEC6-E547-4483-8B72-172B3BB5B797}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84F9E9F9-3E68-4121-935D-551FF3BCC611}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84F9E9F9-3E68-4121-935D-551FF3BCC611}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84F9E9F9-3E68-4121-935D-551FF3BCC611}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84F9E9F9-3E68-4121-935D-551FF3BCC611}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

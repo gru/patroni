@@ -1,0 +1,24 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "haproxy",
+      "Group": "debezium_test",
+      "Host": "haproxy",
+      "Port": 5000,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+    },
+	"2": {
+      "Name": "destination",
+      "Group": "debezium_test",
+      "Host": "destination",
+      "Port": 5432,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+    }
+  }
+}
