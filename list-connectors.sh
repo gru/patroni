@@ -1,0 +1,1 @@
+curl -i http://localhost:8083/connectors?expand=status

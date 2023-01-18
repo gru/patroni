@@ -1,0 +1,1 @@
+curl -i -X DELETE http://localhost:8083/connectors/$1
