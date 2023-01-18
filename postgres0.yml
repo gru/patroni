@@ -62,13 +62,13 @@ bootstrap:
       - host all all all md5
       parameters:
         max_connections: 100
-#        wal_level: hot_standby
+        wal_level: logical
 #        hot_standby: "on"
 #        max_connections: 100
 #        max_worker_processes: 8
 #        wal_keep_segments: 8
 #        max_wal_senders: 10
-#        max_replication_slots: 10
+        max_replication_slots: 10
 #        max_prepared_transactions: 0
 #        max_locks_per_transaction: 64
 #        wal_log_hints: "on"
@@ -78,7 +78,12 @@ bootstrap:
 #        archive_command: mkdir -p ../wal_archive && test ! -f ../wal_archive/%f && cp %p ../wal_archive/%f
 #      recovery_conf:
 #        restore_command: cp ../wal_archive/%f %p
-
+    slots:
+      source_slot:
+        type: logical
+        database: source_db
+        plugin: pgoutput
+      
   # some desired options for 'initdb'
   initdb:  # Note: It needs to be a list (some options need values, others are switches)
   - locale: en_US.UTF-8
