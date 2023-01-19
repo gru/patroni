@@ -60,7 +60,7 @@ stateDiagram-v2
 16. `stop-writer.sh` - останавливает контейнер который обновляет данные в source_db
 17. `/app` - .net core приложения writer и reader
 18. `/connect` - параметры логирования для kafka-connect
-19. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннетором 
+19. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
 20. `/pgAdmin` - настройки подключений для pgAdmin
 21. остальные файлы из patroni и пердназначены для сборки образа patroni, но docker на windows не может собрать работающий образ см. https://github.com/zalando/patroni/issues/1841. Поэтому в docker-compose используется образ andrushin/patroni.
 
@@ -96,15 +96,15 @@ docker compose up
 ```shell
 ./stop-writer.sh
 ```
-3. Публикуем Debezaium source-connector
+3. Публикуем Debezium source-connector
 ```shell
 ./register-postgres.sh
 ```
-4. Публикуем Debezaium source-connector
+4. Публикуем Debezium sink-connector
 ```shell
 ./register-sink.sh
 ```
-5. Убедиться что все коннеторы запущены и находятся в состоянии RUNNING
+5. Убедиться что все коннекторы запущены и находятся в состоянии RUNNING
 ```shell
 ./list-connectors.sh
 ```
