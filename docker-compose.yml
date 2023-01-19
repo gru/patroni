@@ -36,7 +36,7 @@ services:
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: haproxy
-        container_name: demo-haproxy
+        container_name: haproxy
         ports:
             - "5000:5000"
             - "5001:5001"
@@ -51,7 +51,7 @@ services:
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni1
-        container_name: demo-patroni1
+        container_name: patroni1
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni1
@@ -68,7 +68,7 @@ services:
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni2
-        container_name: demo-patroni2
+        container_name: patroni2
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni2
@@ -79,7 +79,7 @@ services:
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni3
-        container_name: demo-patroni3
+        container_name: patroni3
         environment:
             <<: *haproxy_env
             PATRONI_NAME: patroni3
@@ -107,6 +107,7 @@ services:
           context: ./app
           dockerfile: ./PgWriter/Dockerfile
         networks: [ demo ]
+        container_name: writer
         environment:
           CONNECTION_STRING: "Server=haproxy;Port=5000;Database=source_db;User Id=postgres;Password=postgres;"
         depends_on:
@@ -124,6 +125,7 @@ services:
           context: ./app
           dockerfile: ./PgReader/Dockerfile
         networks: [ demo ]
+        container_name: reader
         environment:
           CONNECTION_STRING: "Server=destination;Port=5432;Database=destination_db;User Id=postgres;Password=postgres;"
         depends_on:
@@ -132,6 +134,7 @@ services:
     zookeeper:
         image: quay.io/debezium/zookeeper:1.8
         networks: [ demo ]
+        container_name: zookeeper
         ports:
           - 2181:2181
           - 2888:2888
@@ -140,6 +143,7 @@ services:
     kafka:
         image: quay.io/debezium/kafka:1.8
         networks: [ demo ]
+        container_name: kafka
         ports:
           - 9092:9092
           - 29092:29092
@@ -148,14 +152,39 @@ services:
         environment:
           - ZOOKEEPER_CONNECT=zookeeper:2181
          
-    connect:
+    connect1:
         image: debezium-jdbc
         build:
           context: ./debezium-jdbc
           dockerfile: ./Dockerfile
         networks: [ demo ]
+        container_name: connect1
         ports:
           - 8083:8083
+        links:
+          - kafka
+          - haproxy
+          - destination
+        environment:
+          - BOOTSTRAP_SERVERS=kafka:9092
+          - GROUP_ID=1
+          - CONFIG_STORAGE_TOPIC=my_connect_configs
+          - OFFSET_STORAGE_TOPIC=my_connect_offsets
+          - STATUS_STORAGE_TOPIC=my_connect_statuses
+        volumes:
+          - type: bind
+            source: ./connect/log4j.properties
+            target: /kafka/config/log4j.properties
+            
+    connect2:
+        image: debezium-jdbc
+        build:
+          context: ./debezium-jdbc
+          dockerfile: ./Dockerfile
+        networks: [ demo ]
+        container_name: connect2
+        ports:
+          - 8084:8083
         links:
           - kafka
           - haproxy
@@ -189,5 +218,6 @@ services:
         ports:
           - "5050:80"
         networks: [ demo ]
+        container_name: pgadmin
         restart: unless-stopped
 

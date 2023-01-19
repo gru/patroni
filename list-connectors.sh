@@ -1,1 +1,1 @@
-curl -i http://localhost:8083/connectors?expand=status
+curl -i http://localhost:8083/connectors?expand=status&expand=info
