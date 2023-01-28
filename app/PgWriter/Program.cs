@@ -1,62 +1,152 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Data;
+using System.Text.Json;
+using Bogus;
 using Npgsql;
+using NpgsqlTypes;
 
-var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
-if (string.IsNullOrWhiteSpace(connectionString))
-    return -1;
-
-await using var connection = new NpgsqlConnection(connectionString);
-
-while (connection.State == ConnectionState.Closed)
+public static class Program
 {
-    try
+    public static async Task<int> Main()
     {
-        Console.WriteLine("Connecting...");
+        var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return -1;
+
+        var writeToOutbox = Environment.GetEnvironmentVariable("OUTBOX");
         
-        await connection.OpenAsync();
+        await using var connection = new NpgsqlConnection(connectionString);
+
+        while (connection.State == ConnectionState.Closed)
+        {
+            try
+            {
+                Console.WriteLine("Connecting...");
+        
+                await connection.OpenAsync();
+            }
+            catch
+            {
+                Console.WriteLine("Unable to connect");
+
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            }
+        }
+
+        if (bool.TryParse(writeToOutbox, out var writeToOutboxValue) && writeToOutboxValue)
+            await WriteToOutboxTable(connection);
+        else
+            await WriteToDebeziumTable(connection);
+
+        return 0;
     }
-    catch
+    
+    private static async Task WriteToDebeziumTable(NpgsqlConnection connection)
     {
-        Console.WriteLine("Unable to connect");
-
-        await Task.Delay(TimeSpan.FromSeconds(5));
-    }
-}
-
-await using var command = connection.CreateCommand();
-command.CommandText = @"
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
 INSERT INTO public.debezium_table(id, current_value) 
 VALUES (1, 1)
 ON CONFLICT (id) DO UPDATE 
 SET current_value = public.debezium_table.current_value + 1
 RETURNING current_value;";
 
-while (true)
-{
-    try
-    {
-        var value = (long) command.ExecuteScalar();
-        if (value % 100 == 0)
-            Console.WriteLine($"Value: {value}");
-    }
-    catch
-    {
-        Console.WriteLine("Unable to update value");
-
-        await Task.Delay(TimeSpan.FromSeconds(1));
-
-        if (connection.State == ConnectionState.Closed)
+        while (true)
         {
             try
             {
-                await connection.OpenAsync();
+                var value = (long) command.ExecuteScalar();
+                if (value % 100 == 0)
+                    Console.WriteLine($"Value: {value}");
             }
             catch
             {
-                Console.WriteLine("Unable to restore connection");
+                Console.WriteLine("Unable to update value");
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                if (connection.State == ConnectionState.Closed)
+                {
+                    try
+                    {
+                        await connection.OpenAsync();
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Unable to restore connection");
+                    }
+                }
             }
-        }
+        }   
+    }
+    
+    private static async Task WriteToOutboxTable(NpgsqlConnection connection)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = @"
+INSERT INTO public.outbox(aggregatetype, aggregateid, type, payload) 
+VALUES (@aggregatetype, @aggregateid, @type, @payload);";
+
+        var aggregateType = command.CreateParameter();
+        aggregateType.ParameterName = "@aggregatetype";
+        aggregateType.Value = "Person";
+        command.Parameters.Add(aggregateType);
+        
+        var aggregateId = command.CreateParameter();
+        aggregateId.ParameterName = "@aggregateid";
+        command.Parameters.Add(aggregateId);
+        
+        var type = command.CreateParameter();
+        type.ParameterName = "@type";
+        type.Value = "PersonCreated";
+        command.Parameters.Add(type);
+        
+        var payload = command.CreateParameter();
+        payload.ParameterName = "@payload";
+        payload.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        command.Parameters.Add(payload);
+        
+        var faker = new Faker<Payload>()
+            .RuleFor(c => c.Name, f => f.Person.FullName);
+        
+        var rowCount = 0;
+        while (true)
+        {
+            try
+            {
+                var value = faker.Generate();
+                aggregateId.Value = Guid.NewGuid().ToString();
+                payload.Value = JsonSerializer.SerializeToDocument(value);
+                
+                command.ExecuteNonQuery();
+                
+                if (rowCount++ % 100 == 0)
+                    Console.WriteLine($"Outbox event count: {rowCount}");
+            }
+            catch
+            {
+                Console.WriteLine("Unable to create outbox event");
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                if (connection.State == ConnectionState.Closed)
+                {
+                    try
+                    {
+                        await connection.OpenAsync();
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Unable to restore connection");
+                    }
+                }
+            }
+        }   
+    }
+
+    private class Payload
+    {
+        public string Name { get; set; }
     }
 }

@@ -76,7 +76,7 @@ stateDiagram-v2
         database: source_db
         plugin: pgoutput
 ```
-и файл конфигурации debezium коннектора `register-postgres.json`
+и файл конфигурации debezium коннектора `register-postgres.json`.
 ```json
  "config": {
     ...
@@ -89,45 +89,45 @@ stateDiagram-v2
 ## Запуск
 
 1. Запуск docker-compose 
-```shell
-docker compose up
-```
+    ```shell
+    docker compose up
+    ```
 2. После запуска сервисов, остановить `writer`
-```shell
-./stop-writer.sh
-```
+    ```shell
+    ./stop-writer.sh
+    ```
 3. Публикуем Debezium source-connector
-```shell
-./register-postgres.sh
-```
+    ```shell
+    ./register-postgres.sh
+    ```
 4. Публикуем Debezium sink-connector
-```shell
-./register-sink.sh
-```
+    ```shell
+    ./register-sink.sh
+    ```
 5. Убедиться что все коннекторы запущены и находятся в состоянии RUNNING
-```shell
-./list-connectors.sh
-```
+    ```shell
+    ./list-connectors.sh
+    ```
 6. Запускаем `writer`
-```shell
-./start-writer.sh
-```
+    ```shell
+    ./start-writer.sh
+    ```
 7. После чего можно перейти в pgadmin по адресу http://localhost:5050/ и там в группе debezium_test будет два сервера `haproxy` и `destination`.
 8. Выполнить запрос на `source_db` чтобы убедиться что `writer` записал данные
-```sql
-SELECT * FROM debezium_table;
-```
+    ```sql
+    SELECT * FROM debezium_table;
+    ```
 9. Выполнить запрос на `destination_db` чтобы убедиться что данные переданы через `kafka`
-```sql
-SELECT * FROM debezium_table;
-```
+    ```sql
+    SELECT * FROM debezium_table;
+    ```
 
 ## Инициализация БД источника (source_db) и потребителя (destination_db)
 1. После того как кластер Postgres будет сформирован patroni запускает post_bootstrap скрипт `setup_cluster.sh` для инициализации `source_db`. См. файл `postgres0.yml`
-```yaml
-  # Additional script to be launched after initial cluster creation (will be passed the connection URL as parameter)
-  post_init: /usr/local/bin/setup_cluster.sh
-```
+    ```yaml
+      # Additional script to be launched after initial cluster creation (will be passed the connection URL as parameter)
+      post_init: /usr/local/bin/setup_cluster.sh
+    ```
 и файл `docker-compose.yml`
 ```yaml
 volumes: &post_init
@@ -139,42 +139,60 @@ volumes: &post_init
     target: /home/postgres/postgres0.yml
 ```
 2. Для инициализации БД получателя после того как стартовал Postgres контейнер `destination` выполняется скрипт `setup_destination.sql`. См. файл `docker-compose.yml`
-```yaml
-volumes:
-  - type: bind
-    source: ./setup_destination.sql
-    target: /docker-entrypoint-initdb.d/setup_destination.sql
-```
+    ```yaml
+    volumes:
+      - type: bind
+        source: ./setup_destination.sql
+        target: /docker-entrypoint-initdb.d/setup_destination.sql
+    ```
 ## Смена лидера Postgres через patronictl (Switchover)
 1. Получить список экземпляров Postgres и определить какой из них является лидером
-```shell
-./patronictl.sh list
-```
+    ```shell
+    ./patronictl.sh list
+    ```
 2. Сменить лидера кластера Postgres
-```shell
-./patronictl.sh switchover
-```
+    ```shell
+    ./patronictl.sh switchover
+    ```
 
 ## Тестирование Failover
 1. Получить текущего лидера кластера Postgres, в колонке Role будет указано Leader
-```shell
-./patronictl.sh list
-```
+    ```shell
+    ./patronictl.sh list
+    ```
 2. Убить процесс в контейнере docker
-```shell
-./kill.sh patroni1
-```
+    ```shell
+    ./kill.sh patroni1
+    ```
 
 ## Тестирование ребаланса в кластере kafka-connect
 1. Определить в каком экземпляре живет коннектор
-```shell
-./list-connectors.sh
-```
+    ```shell
+    ./list-connectors.sh
+    ```
 2. Убить процесс в контейнере docker. Команда docker stop для этого не подходит потому что при graceful shutdown коннекторы перейдут в состояние UNASSIGNED и будут находится в нем до тех пор пока не поднимется остановленный экземпляр kafka-connect или их принудительно не запустят. См. команду `resume-connector.sh`.
-```shell
-./kill.sh connect1
-```
+    ```shell
+    ./kill.sh connect1
+    ```
 3. Убедиться что все коннеторы продолжили работу на оставшемся экземпляре kafka-connect
-```shell
-./list-connectors.sh
-```
+    ```shell
+    ./list-connectors.sh
+    ```
+
+## Тестирование outbox паттерна
+1. Добавить переменную окружения OUTBOX для контейнера `writer`, после чего он начнет вставлять сообщения в таблицу `public.outbox`
+    ```yaml
+    writer:
+        image: writer
+        environment:
+          OUTBOX: "true"
+    ```
+2. Создать outbox коннектор
+    ```shell
+    ./register-outbox.sh
+    ```
+3. Прочитать события из топика `Person.events`
+    ```shell
+    ./kafka-console-consumer.sh Person.events
+    ```
+

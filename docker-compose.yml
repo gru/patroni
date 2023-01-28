@@ -218,6 +218,5 @@ services:
         ports:
           - "5050:80"
         networks: [ demo ]
-        container_name: pgadmin
         restart: unless-stopped
 
