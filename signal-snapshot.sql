@@ -1,0 +1,1 @@
+INSERT INTO public.debezium_signal(id, type, data) VALUES (uuid_generate_v4(), 'execute-snapshot', '{"data-collections": ["public.debezium_table"]}');

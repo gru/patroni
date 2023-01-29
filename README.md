@@ -42,27 +42,36 @@ stateDiagram-v2
 - pgadmin
 
 ## Список файлов и директорий
-1. `delete-connector.sh` - удаляет коннектор
-2. `kafka-console-consumer.sh` - считывает сообщения из указанного топика
-3. `kafka-topics.sh` - список топиков kafka
-4. `kill.sh` - убивает контейнер
-5. `list-connectors.sh` - возвращает список коннеторов
-6. `patronictl.sh` - выполняет команды patronictl, см. https://bootvar.com/useful-patroni-commands/
-7. `register-postgres.json` - конфигурация коннетора debezium для postgres
-8. `register-postgres.sh` - регистрирует коннектор debezium для postgres
-9. `register-sink.json` - конфигурация коннектора JDBC для postgres
-10. `register-sink.sh` - регистрирует JDBC коннетор
-11. `restart-connectors.sh` - перезапускает задачу коннектора
-12. `resume-connectors.sh` - перезапускает коннектор
-13. `setup_cluster.sh` - скрипт настройки source_db в кластере postgres
-14. `setup_destination.sql` - скрипт настройки destination_db
-15. `start-writer.sh` - запускает контейнер который обновляет данные в source_db
-16. `stop-writer.sh` - останавливает контейнер который обновляет данные в source_db
-17. `/app` - .net core приложения writer и reader
-18. `/connect` - параметры логирования для kafka-connect
-19. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
-20. `/pgAdmin` - настройки подключений для pgAdmin
-21. остальные файлы из patroni и пердназначены для сборки образа patroni, но docker на windows не может собрать работающий образ см. https://github.com/zalando/patroni/issues/1841. Поэтому в docker-compose используется образ andrushin/patroni.
+1. `alter-destination-table.sh` - добавляет новую колонку в public.debezium_table в destination_db
+2. `alter-source-table.sh` - добавляет новую колонку в public.debezium_table в source_db
+3. `connector-config.sh` - возвращает конфигурацию коннектора
+4. `delete-connector.sh` - удаляет коннектор
+5. `kafka-console-consumer.sh` - считывает сообщения из указанного топика
+6. `kafka-topics.sh` - список топиков kafka
+7. `kill.sh` - убивает контейнер
+8. `list-connectors.sh` - возвращает список коннеторов
+9. `patronictl.sh` - выполняет команды patronictl, см. https://bootvar.com/useful-patroni-commands/
+10. `register-postgres.json` - конфигурация коннетора debezium для postgres
+11. `register-postgres.sh` - регистрирует коннектор debezium для postgres
+12. `register-outbox.json` - конфигурация outbox коннетора debezium для postgres
+13. `register-outbox.sh` - регистрирует outbox коннектор debezium для postgres
+14. `register-sink.json` - конфигурация коннектора JDBC для postgres
+15. `register-sink.sh` - регистрирует JDBC коннетор
+16. `restart-connectors.sh` - перезапускает задачу коннектора
+17. `resume-connectors.sh` - перезапускает коннектор
+18. `read-destination-table.sh` - читает все записи из public.debezium_table в destination_db
+19. `pause-connector.sh` - приостанавливает работу коннектора
+20. `signal-snapshot.sh` - выполняет скрипт создания нового сигнала создания инкрементального снапшота данных в public.debezium_signal
+21. `signal-snapshot.sql` - скрипт добавления нового сигнала в public.debezium_signal
+22. `setup_cluster.sh` - скрипт настройки source_db в кластере postgres
+23. `setup_destination.sql` - скрипт настройки destination_db
+24. `start-writer.sh` - запускает контейнер который обновляет данные в source_db
+25. `stop-writer.sh` - останавливает контейнер который обновляет данные в source_db
+26. `/app` - .net core приложения writer и reader
+27. `/connect` - параметры логирования для kafka-connect
+28. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
+29. `/pgAdmin` - настройки подключений для pgAdmin
+30. остальные файлы из patroni и пердназначены для сборки образа patroni, но docker на windows не может собрать работающий образ см. https://github.com/zalando/patroni/issues/1841. Поэтому в docker-compose используется образ andrushin/patroni.
 
 ## Конфигурация replication slots в patroni
 См. файл postgres0.yml
@@ -195,4 +204,44 @@ volumes: &post_init
     ```shell
     ./kafka-console-consumer.sh Person.events
     ```
-
+## Тестирование инкрементальных снапшотов данных
+1. Остнавливаем `writer`
+   ```shell
+   ./stop-writer.sh
+   ```
+2. Создаем `source-connector`
+   ```shell
+   ./register-postgres.sh
+   ```
+3. Создаем `sink-connector`
+   ```shell
+   ./register-sink.sh
+   ```
+4. Остановка коннектора `source-connector`
+   ```shell
+   ./pause-connector.sh source-connector
+   ```
+5. Изменнение схемы применика данных
+   ```shell
+   ./alter-destination-table.sh
+   ```
+6. Изменение схемы получателя данных
+   ```shell
+   ./alter-source-table.sh
+   ```
+7. Пересоздаем `sink-connector` для того чтобы он подхватил изменения в схеме БД
+   ```shell
+   ./delete-connector.sh sink-connector && ./register-sink.sh
+   ```
+8. Запуск коннектора `source-connector`
+   ```shell
+   ./resume-connector.sh source-connector
+   ```
+9. Отправка сигнала для создания инкрементального снапшота данных
+    ```shell
+   ./signal-snapshot.sh
+   ```
+10. Проверка что данные успешно получены
+    ```shell
+    ./read-destination-table.sh
+    ```

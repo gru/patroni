@@ -13,6 +13,7 @@
 		"publication.autocreate.mode": "filtered",
 		"slot.name": "source_slot",
         "schema.include.list": "public",
-		"table.include.list": "public.debezium_table"
+		"table.include.list": "public.debezium_table,public.debezium_signal",
+		"signal.data.collection": "public.debezium_signal"
     }
 }
