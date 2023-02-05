@@ -7,7 +7,7 @@ networks:
 
 services:
     etcd1: &etcd
-        image: andrushin/patroni
+        image: andrushin/patroni:12
         networks: [ demo ]
         environment:
             ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
@@ -32,7 +32,7 @@ services:
         command: etcd -name etcd3 -initial-advertise-peer-urls http://etcd3:2380
 
     haproxy:
-        image: andrushin/patroni
+        image: andrushin/patroni:12
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: haproxy
@@ -51,7 +51,7 @@ services:
               target: /home/postgres/signal-snapshot.sql
 
     patroni1:
-        image: andrushin/patroni
+        image: andrushin/patroni:12
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni1
@@ -68,7 +68,7 @@ services:
             target: /home/postgres/postgres0.yml
 
     patroni2:
-        image: andrushin/patroni
+        image: andrushin/patroni:12
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni2
@@ -79,7 +79,7 @@ services:
         volumes: *post_init
 
     patroni3:
-        image: andrushin/patroni
+        image: andrushin/patroni:12
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni3
