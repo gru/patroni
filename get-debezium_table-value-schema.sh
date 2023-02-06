@@ -1,0 +1,1 @@
+curl -X GET http://localhost:8085/subjects/server.public.debezium_table-value/versions/$1

@@ -1,0 +1,1 @@
+curl -X PUT -H "Content-Type: application/vnd.schemaregistry.v1+json" --data '{"compatibility": "$1"}' http://localhost:8085/config

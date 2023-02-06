@@ -1,0 +1,1 @@
+curl -X GET http://localhost:8085/config/$1

@@ -67,11 +67,16 @@ stateDiagram-v2
 23. `setup_destination.sql` - скрипт настройки destination_db
 24. `start-writer.sh` - запускает контейнер который обновляет данные в source_db
 25. `stop-writer.sh` - останавливает контейнер который обновляет данные в source_db
-26. `/app` - .net core приложения writer и reader
-27. `/connect` - параметры логирования для kafka-connect
-28. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
-29. `/pgAdmin` - настройки подключений для pgAdmin
-30. остальные файлы из patroni и пердназначены для сборки образа patroni, но docker на windows не может собрать работающий образ см. https://github.com/zalando/patroni/issues/1841. Поэтому в docker-compose используется образ andrushin/patroni.
+26. `get-compatibility-level.sh` - возвращает текущий уровень совместимости shema registry
+27. `set-compatibility-level.sh` - устанавливает текущий уровень совместимости shema registry
+28. `get-debezium_table-key-schema.sh` - возвращает схему для ключа сообщения изменнеия данных в source_db.public.debezium_table schema registry
+29. `get-debezium_table-value-schema.sh` - возвращает схему для тела сообщения изменнеия данных в source_db.public.debezium_table schema registry
+30. `kafka-avro-console-consumer.sh` - скрипт для чтения сообщений сериализованных в формате avro
+32. `/app` - .net core приложения writer и reader
+33. `/connect` - параметры логирования для kafka-connect
+34. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
+35. `/pgAdmin` - настройки подключений для pgAdmin
+36. остальные файлы из patroni и пердназначены для сборки образа patroni, но docker на windows не может собрать работающий образ см. https://github.com/zalando/patroni/issues/1841. Поэтому в docker-compose используется образ andrushin/patroni.
 
 ## Конфигурация replication slots в patroni
 См. файл postgres0.yml
