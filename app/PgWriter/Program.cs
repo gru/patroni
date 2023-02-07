@@ -124,9 +124,9 @@ VALUES (@aggregatetype, @aggregateid, @type, @payload);";
                 if (rowCount++ % 100 == 0)
                     Console.WriteLine($"Outbox event count: {rowCount}");
             }
-            catch
+            catch (Exception ex)
             {
-                Console.WriteLine("Unable to create outbox event");
+                Console.WriteLine($"Unable to create outbox event: {ex.Message}");
 
                 await Task.Delay(TimeSpan.FromSeconds(1));
 
