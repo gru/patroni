@@ -72,6 +72,7 @@ stateDiagram-v2
 28. `get-debezium_table-key-schema.sh` - возвращает схему для ключа сообщения изменнеия данных в source_db.public.debezium_table schema registry
 29. `get-debezium_table-value-schema.sh` - возвращает схему для тела сообщения изменнеия данных в source_db.public.debezium_table schema registry
 30. `kafka-avro-console-consumer.sh` - скрипт для чтения сообщений сериализованных в формате avro
+31. `register-postgres-patched.json` - пример возможности пропатчить конфигурацию коннектора чтобы компенсировать уудаленное поле и обойти валидацию schema registry.
 32. `/app` - .net core приложения writer и reader
 33. `/connect` - параметры логирования для kafka-connect
 34. `/debezium-jdbc` - Dockerfile для kafka-connect с debezium и JDBC коннектором 
