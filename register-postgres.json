@@ -20,6 +20,8 @@
 		"value.converter": "io.confluent.connect.avro.AvroConverter",
 		"value.converter.schema.registry.url": "http://schema_registry:8081",
 		"heartbeat.interval.ms": 15000,
-		"heartbeat.action.query": "update public.debezium_heartbeat set last_heartbeat_ts = now();"
+		"heartbeat.action.query": "update public.debezium_heartbeat set last_heartbeat_ts = now();",
+		"transforms": "unwrap",
+		"transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState"
     }
 }

@@ -15,6 +15,8 @@ public static class Program
             return -1;
 
         var writeToOutbox = Environment.GetEnvironmentVariable("OUTBOX");
+        var custom = Environment.GetEnvironmentVariable("CUSTOM");
+        var customQuery = Environment.GetEnvironmentVariable("CUSTOM_QUERY");
         
         await using var connection = new NpgsqlConnection(connectionString);
 
@@ -35,11 +37,57 @@ public static class Program
         }
 
         if (bool.TryParse(writeToOutbox, out var writeToOutboxValue) && writeToOutboxValue)
+        {
             await WriteToOutboxTable(connection);
+        }
+        else if (bool.TryParse(custom, out var customValue) && customValue)
+        {
+            if (string.IsNullOrWhiteSpace(customQuery))
+                throw new Exception("CUSTOM_QUERY is empty");
+
+            await ExecuteCustomQuery(connection, customQuery);
+        }
         else
+        {
             await WriteToDebeziumTable(connection);
+        }
 
         return 0;
+    }
+
+    private static async Task ExecuteCustomQuery(NpgsqlConnection connection, string query)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = query;
+
+        var executeCount = 0;
+        while (true)
+        {
+            try
+            {
+                await command.ExecuteNonQueryAsync();
+                if (executeCount++ % 100 == 0)
+                    Console.WriteLine($"Executed {executeCount} times");
+            }
+            catch
+            {
+                Console.WriteLine("Unable to execute query");
+
+                await Task.Delay(TimeSpan.FromSeconds(1));
+
+                if (connection.State == ConnectionState.Closed)
+                {
+                    try
+                    {
+                        await connection.OpenAsync();
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Unable to restore connection");
+                    }
+                }
+            }
+        }   
     }
     
     private static async Task WriteToDebeziumTable(NpgsqlConnection connection)
@@ -57,7 +105,7 @@ RETURNING current_value;";
             try
             {
                 var value = (long) command.ExecuteScalar();
-                if (value % 100 == 0)
+                if (value++ % 100 == 0)
                     Console.WriteLine($"Value: {value}");
             }
             catch
