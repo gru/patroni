@@ -47,6 +47,9 @@ bootstrap:
     loop_wait: 10
     retry_timeout: 10
     maximum_lag_on_failover: 1048576
+    synchronous_mode: true
+    synchronous_mode_strict: false  # false = автоматический fallback к async при недоступности sync replica
+    
 #    master_start_timeout: 300
 #    synchronous_mode: false
     #standby_cluster:
@@ -69,6 +72,10 @@ bootstrap:
 #        wal_keep_segments: 8
 #        max_wal_senders: 10
         max_replication_slots: 10
+        synchronous_standby_names: 'FIRST 1 (patroni1,patroni2,patroni3)'
+        checkpoint_timeout: 15s  
+        wal_keep_segments: 1
+        log_checkpoints: on
 #        max_prepared_transactions: 0
 #        max_locks_per_transaction: 64
 #        wal_log_hints: "on"
@@ -83,10 +90,10 @@ bootstrap:
         type: logical
         database: source_db
         plugin: pgoutput
-      outbox_slot:
-        type: logical
-        database: source_db
-        plugin: pgoutput
+      # outbox_slot:
+      #   type: logical
+      #   database: source_db
+      #   plugin: pgoutput
       
   # some desired options for 'initdb'
   initdb:  # Note: It needs to be a list (some options need values, others are switches)

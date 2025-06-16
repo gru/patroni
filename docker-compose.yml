@@ -38,8 +38,8 @@ services:
         hostname: haproxy
         container_name: haproxy
         ports:
-            - "5000:5000"
-            - "5001:5001"
+            - "15000:5000"
+            - "15001:5001"
         command: haproxy
         environment: &haproxy_env
             ETCDCTL_ENDPOINTS: http://etcd1:2379,http://etcd2:2379,http://etcd3:2379
@@ -101,6 +101,7 @@ services:
         expose:
           - 5432
         volumes:
+          - destination_data:/var/lib/postgresql/data
           - type: bind
             source: ./setup_destination.sql
             target: /docker-entrypoint-initdb.d/setup_destination.sql
@@ -229,15 +230,18 @@ services:
           PGADMIN_DEFAULT_PASSWORD: 'admin'
           PGADMIN_CONFIG_SERVER_MODE: 'False'
           PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+          PGADMIN_LOAD_SERVERS: '/pgadmin4/servers.json'
         volumes:
            - type: bind
              source: ./pgAdmin/servers.json
              target: /pgadmin4/servers.json
            - type: bind
              source: ./pgAdmin/pgpass
-             target: /pgpass
+             target: /var/lib/pgadmin/pgpass
         ports:
           - "5050:80"
         networks: [ demo ]
         restart: unless-stopped
 
+volumes:
+  destination_data:

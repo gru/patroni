@@ -1,22 +1,64 @@
 {
   "Servers": {
     "1": {
-      "Name": "haproxy",
-      "Group": "debezium_test",
+      "Name": "HAProxy (Load Balancer)",
+      "Group": "Patroni Cluster",
       "Host": "haproxy",
       "Port": 5000,
       "MaintenanceDB": "postgres",
       "Username": "postgres",
       "PassFile": "/pgpass",
+      "SSLMode": "prefer",
+      "Favorite": true
+    },
+    "2": {
+      "Name": "HAProxy (Read Only)",
+      "Group": "Patroni Cluster", 
+      "Host": "haproxy",
+      "Port": 5001,
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer",
+      "Favorite": true
+    },
+    "3": {
+      "Name": "Patroni1 (Direct)",
+      "Group": "Patroni Nodes",
+      "Host": "patroni1",
+      "Port": 5432,
+      "MaintenanceDB": "postgres", 
+      "Username": "postgres",
+      "PassFile": "/pgpass",
       "SSLMode": "prefer"
     },
-	"2": {
-      "Name": "destination",
-      "Group": "debezium_test",
-      "Host": "destination",
+    "4": {
+      "Name": "Patroni2 (Direct)",
+      "Group": "Patroni Nodes",
+      "Host": "patroni2", 
       "Port": 5432,
       "MaintenanceDB": "postgres",
       "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+    },
+    "5": {
+      "Name": "Patroni3 (Direct)",
+      "Group": "Patroni Nodes",
+      "Host": "patroni3",
+      "Port": 5432, 
+      "MaintenanceDB": "postgres",
+      "Username": "postgres",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+    },
+    "6": {
+      "Name": "Destination DB",
+      "Group": "Other Databases",
+      "Host": "destination",
+      "Port": 5432,
+      "MaintenanceDB": "destination_db",
+      "Username": "postgres", 
       "PassFile": "/pgpass",
       "SSLMode": "prefer"
     }

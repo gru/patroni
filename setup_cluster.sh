@@ -11,7 +11,6 @@ echo "\c source_db
 CREATE TABLE IF NOT EXISTS public.debezium_table(id int primary key, current_value bigint not null);" \
 | psql; 
 
-
 echo '\c source_db
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";' \
 | psql; 
@@ -35,3 +34,17 @@ INSERT INTO public.debezium_heartbeat (last_heartbeat_ts) VALUES (NOW());" \
 echo '\c source_db
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";' \
 | psql; 
+
+# Создать публикацию для Debezium
+echo "\c source_db
+CREATE PUBLICATION dbz_publication FOR ALL TABLES;" \
+| psql;
+
+# Проверить создание публикации
+echo "\c source_db
+SELECT pubname, puballtables, pubinsert, pubupdate, pubdelete, pubtruncate 
+FROM pg_publication 
+WHERE pubname = 'dbz_publication';" \
+| psql;
+
+echo "✅ Database setup completed with publication 'dbz_publication'"
